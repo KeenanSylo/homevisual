@@ -1,0 +1,13 @@
+<!doctype html><body style="margin:0;background:#ddd"><script type="module">
+import * as THREE from 'three'
+import { Avatar } from '/src/avatar.js'
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(1200, 500); document.body.appendChild(r.domElement)
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#ddd')
+scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.2)); const d = new THREE.DirectionalLight(0xffffff, 2.2); d.position.set(2, 3, 3); scene.add(d)
+const av = new Avatar(scene, new THREE.Scene(), () => {}); av.group.visible = true
+await av.setCharacter('woman'); av.place(0, 0, 0); for (let i = 0; i < 10; i++) av.update(1 / 30)
+const cams = [[0, 1.15, 1.5], [1.5, 1.15, 0.0], [-1.5, 1.15, 0.0]]; scene.add(new THREE.AmbientLight(0xffffff, 1.5))
+r.setScissorTest(true)
+cams.forEach((p, i) => { const c = new THREE.PerspectiveCamera(30, 400 / 500, 0.1, 10); c.position.set(...p); c.lookAt(0, 1.1, 0); r.setViewport(i * 400, 0, 400, 500); r.setScissor(i * 400, 0, 400, 500); r.render(scene, c) })
+window.__done = 1
+</script></body>

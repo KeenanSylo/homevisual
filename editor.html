@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit floor plan, Homevisual</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/editor.css" />
+  </head>
+  <body class="editor">
+    <div id="stage"><canvas id="cv"></canvas>
+      <div id="drop" class="hidden"><div><b>Drop your floor plan here</b><span>PNG or JPG. A screenshot of the listing's plan works</span></div></div>
+    </div>
+
+    <aside id="side">
+      <header class="ed-head">
+        <a class="ed-back" href="/" title="All apartments"><i data-ico="arrow-left"></i><span>homevisual</span></a>
+        <h1 id="title">New apartment</h1>
+        <p id="status">Start by uploading a floor plan</p>
+      </header>
+
+      <div id="steps">
+        <section data-step="1">
+          <h3><span class="n">1</span> Floor plan image</h3>
+          <div class="row wrap">
+            <label class="btn primary"><i data-ico="upload-simple"></i> Upload plan<input type="file" id="file" accept="image/*" hidden /></label>
+            <button id="rotL" title="Rotate 90° left"><i data-ico="arrow-counter-clockwise"></i></button>
+            <button id="rotR" title="Rotate 90° right"><i data-ico="arrow-clockwise"></i></button>
+          </div>
+          <p class="tip">You can also drag a file in or paste a screenshot (⌘V).</p>
+        </section>
+
+        <section data-step="2">
+          <h3><span class="n">2</span> Scale</h3>
+          <p class="tip">Click <b>Measure</b>, then click both ends of something with a known length. The scale bar is best (e.g. 0 → 5 m).</p>
+          <div class="row">
+            <button id="calib"><i data-ico="ruler"></i> Measure</button>
+            <span class="muted" id="scaleInfo">not set</span>
+          </div>
+        </section>
+
+        <section data-step="3">
+          <h3><span class="n">3</span> Walls, doors &amp; rooms</h3>
+          <button id="auto" class="primary wide"><i data-ico="eye"></i> Detect automatically</button>
+          <p class="tip">Finds the thick wall fills, the gaps in them (windows / doors) and the rooms. Check the result and fix anything it got wrong with the tools below.</p>
+        </section>
+
+        <section data-step="4">
+          <h3><span class="n">4</span> Draw &amp; fix</h3>
+          <div class="tools" id="tools">
+            <button data-tool="select" class="on" title="Select / move (V)">Select</button>
+            <button data-tool="pan" title="Pan (hold Space)">Pan</button>
+            <button data-tool="wall" title="Drag a wall (W)">Wall</button>
+            <button data-tool="window" title="Click a gap in a wall (O)">Window</button>
+            <button data-tool="balconyDoor" title="Click a gap in a wall">Balcony door</button>
+            <button data-tool="door" title="Click a gap in a wall (D)">Door</button>
+            <button data-tool="entrance" title="Click a gap in a wall">Front door</button>
+            <button data-tool="room" title="Drag a room (R)">Room</button>
+            <button data-tool="balcony" title="Drag the balcony">Balcony</button>
+            <button data-tool="kitchen" title="Drag along the wall where the kitchen is (K)">Kitchen</button>
+            <button data-tool="fixture" title="Click next to a wall (F)">Fixture</button>
+            <button data-tool="light" title="Click to place a ceiling lamp (L)">Lamp</button>
+          </div>
+          <div class="row" id="fixRow">
+            <span class="muted">Fixture:</span>
+            <select id="fixType">
+              <option value="toilet">Toilet</option><option value="basin">Wash basin</option><option value="shower">Shower (corner)</option>
+              <option value="washer">Washing machine</option><option value="towelRail">Towel rail</option>
+              <option value="wardrobe">Wardrobe</option><option value="panel">Electrical cabinet</option><option value="stool">Stool</option>
+            </select>
+          </div>
+          <p class="tip" id="toolTip">Click anything to select it. Drag to move, drag the dots to resize, Delete to remove.</p>
+        </section>
+
+        <section id="props" class="hidden">
+          <h3 id="propsTitle">Selected</h3>
+          <div id="propsBody"></div>
+          <div class="row wrap">
+            <button id="dup"><i data-ico="copy"></i> Copy</button>
+            <button id="del" class="danger"><i data-ico="trash"></i> Delete</button>
+          </div>
+        </section>
+
+        <section data-step="5">
+          <h3><span class="n">5</span> About the apartment</h3>
+          <label class="col">Name<input type="text" id="mName" placeholder="Storgatan 1, 1101" /></label>
+          <label class="col">Address<input type="text" id="mAddr" placeholder="Street 1, City" /></label>
+          <div class="grid2">
+            <label class="col">Floor (0 = ground)<input type="number" id="mFloor" min="0" max="30" step="1" value="1" /></label>
+            <label class="col">Ceiling height m<input type="number" id="mCeil" min="2.1" max="4" step="0.05" value="2.5" /></label>
+          </div>
+          <label class="col"><span>The <b>bottom</b> of the plan faces</span>
+            <select id="mFacing">
+              <option value="0">North</option><option value="45">North-east</option><option value="90">East</option><option value="135">South-east</option>
+              <option value="180">South</option><option value="225">South-west</option><option value="270">West</option><option value="315">North-west</option>
+            </select>
+          </label>
+          <p class="tip">Use the plan's north arrow. It decides where the sun comes from.</p>
+        </section>
+
+        <section class="actions">
+          <div class="row wrap">
+            <button id="undo" title="Undo (⌘Z)"><i data-ico="arrow-u-up-left"></i></button>
+            <button id="redo" title="Redo (⇧⌘Z)"><i data-ico="arrow-u-up-right"></i></button>
+            <button id="save"><i data-ico="floppy-disk"></i> Save</button>
+            <button id="export" title="Download the apartment as a JSON file"><i data-ico="download-simple"></i></button>
+          </div>
+          <button id="open3d" class="primary wide"><i data-ico="house"></i> Save &amp; open in 3D</button>
+        </section>
+      </div>
+    </aside>
+
+    <div id="hud" class="mono"></div>
+    <script type="module" src="/src/editor.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+new GLTFLoader().load('/models/avatar/Xbot.glb', (g) => {
+  g.scene.updateMatrixWorld(true)
+  const out = []
+  g.scene.traverse((o) => { if (o.isSkinnedMesh) {
+    const sk = o.skeleton, v = new THREE.Vector3().fromBufferAttribute(o.geometry.attributes.position, 100)
+    const skinned = o.getVertexPosition(100, new THREE.Vector3())
+    const b0 = new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[5].clone().invert())
+    const bw = new THREE.Vector3().setFromMatrixPosition(sk.bones[5].matrixWorld)
+    out.push({ name: o.name, bm: o.bindMatrix.elements.map((x) => +x.toFixed(3)), raw: v.toArray(), bmv: v.clone().applyMatrix4(o.bindMatrix).toArray(), skinned: skinned.toArray(), bindPos5: b0.toArray(), boneWorld5: bw.toArray(), mw: o.matrixWorld.elements.map((x) => +x.toFixed(3)), parentScale: o.parent.scale.toArray() })
+  } })
+  window.__r = out
+})
+</script>

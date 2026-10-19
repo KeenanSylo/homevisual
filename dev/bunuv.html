@@ -1,0 +1,12 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+new FBXLoader().load('/models/avatar/Female_Adult_17/Female_Adult_17.fbx', (g) => {
+  let m; g.traverse((o) => { if (o.isSkinnedMesh) m = o })
+  const sk = m.skeleton, hb = sk.bones.findIndex((b) => /Head$/.test(b.name.replace(/[_ ]/g, '')))
+  const toHead = sk.boneInverses[hb].clone().multiply(m.bindMatrix)
+  const pos = m.geometry.attributes.position, uv = m.geometry.attributes.uv, v = new THREE.Vector3(), out = []
+  for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(toHead); if (v.x > 3 && v.y < -7) out.push([+uv.getX(i).toFixed(3), +uv.getY(i).toFixed(3)]) }
+  window.__r = out
+})
+</script>

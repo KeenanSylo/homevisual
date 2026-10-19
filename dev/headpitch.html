@@ -1,0 +1,21 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { Avatar } from '/src/avatar.js'
+const scene = new THREE.Scene()
+const out = {}
+for (const c of ['woman', 'man']) {
+  const av = new Avatar(scene, new THREE.Scene(), () => {}); av.group.visible = true
+  await av.setCharacter(c); av.place(0, 0, 0)
+  const head = []; av.model.traverse((o) => { if (o.isBone && /Head$/.test(o.name.replace(/[_ ]/g, ''))) head.push(o) })
+  const h = head[0]
+  const pitch = () => { scene.updateMatrixWorld(true); const f = new THREE.Vector3(0, 0, 1).applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion())); const u = new THREE.Vector3(0, 1, 0).applyQuaternion(h.getWorldQuaternion(new THREE.Quaternion())); return [f, u] }
+  av.setSpeed(0); for (let i = 0; i < 30; i++) av.update(1 / 30)
+  const idle = pitch()
+  av.driven = true; av.setSpeed(av.naturalSpeed)
+  const ws = []; for (let i = 0; i < 90; i++) { av.update(1 / 30); ws.push(pitch()) }
+  // angle of the head's local axes vs idle
+  const ang = ws.map(([f, u]) => Math.round(THREE.MathUtils.radToDeg(Math.acos(Math.min(1, u.dot(idle[1]))))))
+  out[c] = { bone: h.name, maxDev: Math.max(...ang), mean: Math.round(ang.reduce((a, b) => a + b) / ang.length) }
+}
+window.__r = out
+</script>

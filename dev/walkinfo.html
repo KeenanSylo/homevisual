@@ -1,0 +1,17 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+new GLTFLoader().load('/models/avatar/Xbot.glb', (g) => {
+  const clip = g.animations.find((a) => a.name === 'walk')
+  const mixer = new THREE.AnimationMixer(g.scene); mixer.clipAction(clip).play()
+  const hips = g.scene.getObjectByName('mixamorigHips'), lf = g.scene.getObjectByName('mixamorigLeftFoot'), rf = g.scene.getObjectByName('mixamorigRightFoot')
+  const rows = []
+  const N = 60
+  for (let i = 0; i <= N; i++) {
+    const t = clip.duration * i / N; mixer.setTime(t); g.scene.updateMatrixWorld(true)
+    const p = (o) => new THREE.Vector3().setFromMatrixPosition(o.matrixWorld)
+    rows.push([t, p(hips).toArray(), p(lf).toArray(), p(rf).toArray()])
+  }
+  window.__r = { dur: clip.duration, tracks: clip.tracks.filter((t) => t.name.endsWith('position')).map((t) => t.name), rows: rows.map((r) => [r[0].toFixed(3), r[1].map((v) => v.toFixed(3)).join(','), r[2].map((v) => v.toFixed(3)).join(','), r[3].map((v) => v.toFixed(3)).join(',')]) }
+})
+</script>

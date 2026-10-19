@@ -1,0 +1,21 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+new GLTFLoader().load('/models/avatar/Xbot.glb', (g) => {
+  g.scene.updateMatrixWorld(true)
+  let o; g.scene.traverse((x) => { if (x.isSkinnedMesh && /Surface/.test(x.name)) o = x })
+  const sk = o.skeleton, si = o.geometry.attributes.skinIndex, sw = o.geometry.attributes.skinWeight, pos = o.geometry.attributes.position
+  const bindPos = sk.bones.map((_, i) => new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[i].clone().invert()))
+  const childOf = sk.bones.map((b) => { const c = b.children.find((x) => x.isBone); return c ? sk.bones.indexOf(c) : -1 })
+  const stats = {}
+  for (let i = 0; i < pos.count; i += 7) {
+    let best = 0, bw = -1
+    for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w > bw) { bw = w; best = si.getComponent(i, k) } }
+    const v = new THREE.Vector3().fromBufferAttribute(pos, i), a = bindPos[best], ci = childOf[best]
+    let d
+    if (ci >= 0) { const seg = bindPos[ci].clone().sub(a); const t = Math.max(0, Math.min(1, v.clone().sub(a).dot(seg) / seg.lengthSq())); d = v.distanceTo(a.clone().addScaledVector(seg, t)) } else d = v.distanceTo(a)
+    const n = sk.bones[best].name; stats[n] = Math.max(stats[n] || 0, d)
+  }
+  window.__r = { stats, childOfArm: sk.bones[childOf[sk.bones.findIndex((b) => /LeftArm$/.test(b.name))]]?.name, childHips: sk.bones[childOf[0]]?.name, b0: sk.bones[0].name, kids: sk.bones[0].children.map((c) => c.name) }
+})
+</script>

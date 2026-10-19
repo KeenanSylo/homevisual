@@ -1,0 +1,28 @@
+<!doctype html><canvas id="c" width="1024" height="1024"></canvas><script type="module">
+import * as THREE from 'three'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+const n = new URLSearchParams(location.search).get('n')
+// categories → colour
+const CAT = [
+  [/UpperArm/, [255, 0, 0]], [/Forearm/, [255, 140, 0]], [/Hand|Finger/, [255, 255, 0]],
+  [/Clavicle/, [255, 0, 255]], [/Spine2|Neck/, [0, 255, 255]], [/Spine1/, [0, 128, 255]], [/Spine$/, [0, 0, 255]],
+  [/Pelvis/, [128, 0, 255]], [/Thigh/, [0, 255, 0]], [/Calf/, [0, 128, 0]], [/Foot|Toe/, [128, 128, 0]], [/Head/, [255, 255, 255]],
+]
+new FBXLoader().load(`/models/avatar/${n}/${n}.fbx`, (g) => {
+  let mesh; g.traverse((o) => { if (o.isSkinnedMesh) mesh = o })
+  const geo = mesh.geometry, uv = geo.attributes.uv, si = geo.attributes.skinIndex, sw = geo.attributes.skinWeight, bones = mesh.skeleton.bones
+  const ctx = document.getElementById('c').getContext('2d')
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 1024, 1024)
+  const bodies = geo.groups.filter((gr) => /body/i.test(mesh.material[gr.materialIndex].name))
+  const dom = (i) => { let b = 0, w = -1; for (let k = 0; k < 4; k++) { const x = sw.getComponent(i, k); if (x > w) { w = x; b = si.getComponent(i, k) } } return bones[b].name }
+  const idx = geo.index
+  for (const body of bodies) for (let t = body.start; t < body.start + body.count; t += 3) {
+    const ii = [0, 1, 2].map((k) => (idx ? idx.getX(t + k) : t + k))
+    const names = ii.map(dom); const nm = names.sort((a, b) => names.filter((x) => x === b).length - names.filter((x) => x === a).length)[0]
+    const col = (CAT.find(([r]) => r.test(nm)) || [0, [80, 80, 80]])[1]
+    ctx.fillStyle = `rgb(${col})`; ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1.5
+    ctx.beginPath(); ii.forEach((i, k) => { const x = uv.getX(i) * 1024, y = (1 - uv.getY(i)) * 1024; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y) }); ctx.closePath(); ctx.fill(); ctx.stroke()
+  }
+  window.__r = document.getElementById('c').toDataURL()
+})
+</script>

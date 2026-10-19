@@ -1,0 +1,10 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+const n = new URLSearchParams(location.search).get('n')
+new FBXLoader().load(`/models/avatar/${n}/${n}.fbx`, (g) => {
+  const meshes = []
+  g.traverse((o) => { if (o.isMesh) meshes.push([o.name, (Array.isArray(o.material) ? o.material : [o.material]).map((m) => m.name).join('|'), o.geometry.groups.map((x) => x.count).join(',')]) })
+  window.__r = { meshes }
+}, undefined, (e) => { window.__r = { err: String(e) } })
+</script>

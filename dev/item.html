@@ -1,0 +1,11 @@
+<!doctype html><body style="margin:0;background:#ddd"><script type="module">
+import * as THREE from 'three'
+import { CATALOG } from '/src/furniture.js'
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(1000, 500); document.body.appendChild(r.domElement)
+const sc = new THREE.Scene(); sc.background = new THREE.Color('#e4e2de')
+sc.add(new THREE.HemisphereLight(0xffffff, 0x999999, 2.4)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(2, 4, 3); sc.add(d)
+const def = CATALOG[new URLSearchParams(location.search).get('t') || 'bistro']
+const o = def.build(def.w, def.d, def.h, def.color); sc.add(o)
+r.setScissorTest(true)
+;[[1.2, 1.0, 1.4], [1.6, 0.7, 0.0]].forEach((p, i) => { const c = new THREE.PerspectiveCamera(32, 1, 0.05, 20); c.position.set(...p); c.lookAt(0, 0.4, 0); r.setViewport(i * 500, 0, 500, 500); r.setScissor(i * 500, 0, 500, 500); r.render(sc, c) })
+</script></body>

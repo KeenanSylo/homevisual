@@ -1,0 +1,30 @@
+<!doctype html><canvas id="c" width="1024" height="1024"></canvas><script type="module">
+import * as THREE from 'three'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+const n = new URLSearchParams(location.search).get('n')
+new FBXLoader().load(`/models/avatar/${n}/${n}.fbx`, (g) => {
+  let mesh; g.traverse((o) => { if (o.isSkinnedMesh) mesh = o })
+  g.updateMatrixWorld(true)
+  const geo = mesh.geometry, uv = geo.attributes.uv, pos = geo.attributes.position, idx = geo.index
+  const bm = mesh.bindMatrix
+  const ys = new Float32Array(pos.count); let mn = 1e9, mx = -1e9
+  const v = new THREE.Vector3()
+  for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(bm); ys[i] = v.y; mn = Math.min(mn, v.y); mx = Math.max(mx, v.y) }
+  // render with WebGL so height interpolates smoothly across triangles
+  const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), preserveDrawingBuffer: true })
+  r.setSize(1024, 1024, false)
+  const bodies = geo.groups.filter((gr) => /body/i.test(mesh.material[gr.materialIndex].name))
+  const P = [], C = []
+  for (const b of bodies) for (let k = b.start; k < b.start + b.count; k++) {
+    const i = idx ? idx.getX(k) : k
+    P.push(uv.getX(i) * 2 - 1, uv.getY(i) * 2 - 1, 0)
+    const t = (ys[i] - mn) / (mx - mn); C.push(t, t, t)
+  }
+  const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(C, 3))
+  const m = new THREE.Mesh(gg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }))
+  const sc = new THREE.Scene(); sc.add(m); const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1)
+  r.outputColorSpace = THREE.LinearSRGBColorSpace
+  r.render(sc, cam)
+  window.__r = { url: document.getElementById('c').toDataURL(), mn, mx }
+})
+</script>

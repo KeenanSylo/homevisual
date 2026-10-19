@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Homevisual</title>
+    <script>
+      // old links (/?mode=walk&spot=…) went straight to the 3D view of the first apartment
+      if (/[?&](mode|spot|t|date|pt|overlay)=/.test(location.search)) location.replace('/app.html' + location.search + (location.search.includes('apt=') ? '' : '&apt=apartment-1'))
+    </script>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/home.css" />
+  </head>
+  <body class="home">
+    <header class="bar">
+      <a class="wordmark" href="/">homevisual</a>
+      <div class="bar-actions">
+        <button id="privacyBtn" class="btn-line" aria-pressed="false"></button>
+        <label class="btn-ink" for="pick"><i data-ico="plus"></i> New from a floor plan</label>
+      </div>
+    </header>
+    <main>
+      <div class="intro">
+        <h1>Your floor plans</h1>
+        <p>Open one to walk through it in 3D, try furniture and see where the sun falls. Any plan from a listing works: upload the image and the walls are found for you.</p>
+      </div>
+      <section id="grid" class="sheets" aria-label="Apartments"></section>
+    </main>
+    <input type="file" id="pick" accept="image/*" hidden />
+    <script type="module" src="/src/home.js"></script>
+  </body>
+</html>

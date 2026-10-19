@@ -1,0 +1,18 @@
+<!doctype html><html><body style="margin:0;background:#ddd"><script type="module">
+import * as THREE from 'three'
+import { Avatar } from '/src/avatar.js'
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement)
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#ddd')
+scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2.5)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(2, 4, 3); scene.add(d)
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.1, 50)
+const q = new URLSearchParams(location.search), kind = q.get('c') || 'woman', walk = q.get('walk') === '1', side = q.get('side') === '1'
+const av = new Avatar(scene, new THREE.Scene(), () => {})
+av.group.visible = true
+await av.setCharacter(kind)
+av.place(0, 0, side ? Math.PI / 2 : 0)
+if (walk) { av.driven = true; av.setSpeed(av.naturalSpeed) }
+const close = q.get('close') === '1'; if (close) { cam.position.set(0, 1.62, 0.55); cam.lookAt(0, 1.6, 0) } else { cam.position.set(0, 1.0, 4.2); cam.lookAt(0, 0.88, 0) }
+const t = new THREE.Timer()
+let n = 0
+r.setAnimationLoop(() => { t.update(); av.update(1 / 60); r.render(scene, cam); if (++n === 40) window.__info = { h: new THREE.Box3().setFromObject(av.model, true).getSize(new THREE.Vector3()).y } })
+</script></body></html>

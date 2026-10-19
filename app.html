@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Homevisual</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="viewer">
+    <div id="viewport"></div>
+
+    <!-- title block, like the one in the corner of the drawing -->
+    <header id="titleBlock" class="title-block">
+      <a class="tb-home" href="/" title="All apartments"><i data-ico="arrow-left"></i><span>homevisual</span></a>
+      <div class="tb-name">
+        <h1 id="aptName">Apartment</h1>
+        <p id="aptAddr"></p>
+      </div>
+      <button id="privacyBtn" class="tb-privacy" title="Hide the address (for screenshots)" aria-pressed="false"><i data-ico="eye"></i></button>
+      <dl class="tb-cells" id="aptCells"></dl>
+    </header>
+
+    <div id="topRight">
+      <button id="bakeChip" class="sun-chip bake-chip" aria-pressed="false" hidden title="Blender-quality light while you walk"><span>Baked light</span><span id="bakeChipState">Off</span></button>
+      <button id="sunChip" class="sun-chip" title="Time of day and sunlight"><i data-ico="sun"></i><span id="sunChipTime">15:00</span><span id="sunChipNote"></span></button>
+      <div id="compass" title="North"><div id="needle"><span>N</span></div></div>
+    </div>
+
+    <nav id="dock" aria-label="View and tools">
+      <div id="modes" class="dock-modes" role="tablist" aria-label="View">
+        <button data-mode="dollhouse" class="on"><i data-ico="house"></i><span>Overview</span></button>
+        <button data-mode="plan"><i data-ico="blueprint"></i><span>Plan</span></button>
+        <button data-mode="walk"><i data-ico="person-simple-walk"></i><span>Walk</span></button>
+      </div>
+      <div id="tabs" class="dock-tools">
+        <button data-tab="furnish"><i data-ico="couch"></i><span>Furnish</span></button>
+        <button data-tab="light"><i data-ico="sun"></i><span>Light</span></button>
+        <button data-tab="walk"><i data-ico="map-pin"></i><span>Go to</span></button>
+        <button id="shot" title="Save an HD photo of this view"><i data-ico="camera"></i><span>Photo</span></button>
+        <button data-tab="more"><i data-ico="dots-three"></i><span>More</span></button>
+      </div>
+    </nav>
+
+    <aside id="panel" class="drawer" aria-label="Tool options">
+      <header class="drawer-head">
+        <h2 id="drawerTitle">Furnish</h2>
+        <button id="panelMin" class="icon-btn" title="Close"><i data-ico="x"></i></button>
+      </header>
+
+      <!-- ===================== FURNISH -->
+      <section class="tab" data-tab="furnish">
+        <div id="editor" class="hidden selected-item">
+          <div class="si-head"><strong id="edName"></strong><span class="muted num" id="edPos"></span></div>
+          <div class="presets" id="edPresets"></div>
+          <div class="fields">
+            <label>Width<span><input type="number" id="edW" step="1" /><em>cm</em></span></label>
+            <label>Depth<span><input type="number" id="edD" step="1" /><em>cm</em></span></label>
+            <label>Height<span><input type="number" id="edH" step="1" /><em>cm</em></span></label>
+            <label>Lifted<span><input type="number" id="edE" step="1" /><em>cm</em></span></label>
+            <label>Turned<span><input type="number" id="edRot" step="5" /><em>°</em></span></label>
+          </div>
+          <div class="si-actions">
+            <label class="swatch" title="Colour"><input type="color" id="edC" /></label>
+            <button id="edRotL" title="Turn left 90°"><i data-ico="arrow-counter-clockwise"></i></button>
+            <button id="edRotR" title="Turn right 90°"><i data-ico="arrow-clockwise"></i></button>
+            <button id="edRot15" title="Turn 15°">15°</button>
+            <button id="edDup" title="Copy"><i data-ico="copy"></i></button>
+            <button id="edDel" class="danger" title="Delete"><i data-ico="trash"></i></button>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Start from a layout</h3>
+          <div id="layouts" class="layouts"></div>
+        </div>
+        <div class="group">
+          <h3>Style</h3>
+          <div id="styles" class="chips"></div>
+        </div>
+        <div class="group">
+          <h3>Add furniture</h3>
+          <p class="tip">Pick something, then click the floor where it goes. Scroll while placing to turn it.</p>
+          <div id="catalog"></div>
+        </div>
+        <div class="group">
+          <h3>Your layouts</h3>
+          <div class="inline-form">
+            <input id="saveName" type="text" placeholder="Name this layout" />
+            <button id="saveLayout" class="primary">Save</button>
+          </div>
+          <div id="savedList"></div>
+          <div class="row">
+            <button id="undo" title="Undo (⌘Z)"><i data-ico="arrow-u-up-left"></i> Undo</button>
+            <button id="redo" title="Redo (⇧⌘Z)"><i data-ico="arrow-u-up-right"></i> Redo</button>
+            <button id="clearAll" class="danger quiet">Remove all</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== LIGHT -->
+      <section class="tab hidden" data-tab="light">
+        <div class="group">
+          <div class="clock"><span id="timeLabel" class="num">15:00</span><span class="muted" id="sunInfo"></span></div>
+          <input type="range" id="time" min="4" max="23" step="0.05" value="15" aria-label="Time of day" />
+          <div class="row">
+            <button id="play"><i data-ico="play"></i> Play the day</button>
+          </div>
+        </div>
+        <div class="group" id="bakeGroup">
+          <h3>Baked light</h3>
+          <button id="bakeToggle" class="bake-toggle" aria-pressed="false"><span id="bakeToggleLabel">Turn on baked light</span></button>
+          <p class="muted bake-status" id="bakeStatus"></p>
+          <button id="rebake" class="rebake">Re-bake lighting</button>
+          <p class="muted rebake-note" id="rebakeNote">Only needed for another time of day. Furniture can move without it. Takes about 1 to 2 minutes.</p>
+        </div>
+        <div class="group">
+          <h3>Season</h3>
+          <div class="seg4">
+            <button data-season="03-20">Spring</button>
+            <button data-season="06-21">Summer</button>
+            <button data-season="09-22">Autumn</button>
+            <button data-season="12-21">Winter</button>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Mood</h3>
+          <select id="mood">
+            <option value="auto">Daylight, lamps when dark</option>
+            <option value="warm">Cozy evening</option>
+            <option value="cinema">Movie night</option>
+            <option value="candles">Candles only</option>
+            <option value="bright">Everything on</option>
+          </select>
+        </div>
+        <div class="group">
+          <h3>Direct sun in the living room <span class="muted" id="sunDate"></span></h3>
+          <div id="sunReport" class="muted">Calculating</div>
+          <div id="sunChart" aria-label="Direct sun in the living room per month"></div>
+          <div id="sunTip" class="hidden"></div>
+        </div>
+        <details>
+          <summary>Exact date and lamps</summary>
+          <div class="row">
+            <input type="date" id="date" />
+            <select id="lights">
+              <option value="auto">Lamps automatic</option>
+              <option value="on">Lamps on</option>
+              <option value="off">Lamps off</option>
+            </select>
+          </div>
+        </details>
+      </section>
+
+      <!-- ===================== GO TO -->
+      <section class="tab hidden" data-tab="walk">
+        <div class="group">
+          <h3>Jump to a room</h3>
+          <div class="spots" id="spots"></div>
+        </div>
+        <div class="group">
+          <h3>Camera</h3>
+          <div class="seg2" id="viewModes"><button data-view="third"><i data-ico="user"></i> Behind you</button><button data-view="first"><i data-ico="eye"></i> Your eyes</button></div>
+        </div>
+        <div class="group">
+          <h3>Who's walking</h3>
+          <div class="seg3" id="chars"><button data-char="woman">Woman</button><button data-char="man">Man</button><button data-char="mannequin">Mannequin</button></div>
+          <label class="field-inline">Height<span><input type="number" id="height" min="120" max="220" step="1" value="172" /><em>cm</em></span></label>
+          <p class="tip">Drag to look around and click the floor to walk there. WASD works too. Walk into a door to open it.</p>
+        </div>
+        <button id="shot2" class="primary wide"><i data-ico="camera"></i> Save an HD photo of this view</button>
+        <details>
+          <summary>Field of view and sound</summary>
+          <div class="row"><span class="muted">View width</span><input type="range" id="fov" min="60" max="140" step="1" value="120" /><span id="fovLabel" class="num">120°</span></div>
+          <div class="row between"><label class="check"><input type="checkbox" id="eyeproj" checked /> Wide human-eye view</label><button id="fovEye">Reset</button></div>
+          <label class="check"><input type="checkbox" id="me" checked /> Show me in Overview and Plan</label>
+          <label class="check"><input type="checkbox" id="steps" checked /> Footsteps and head bob</label>
+        </details>
+      </section>
+
+      <!-- ===================== MORE -->
+      <section class="tab hidden" data-tab="more">
+        <div class="group">
+          <h3>Measure</h3>
+          <div class="row">
+            <button id="measure"><i data-ico="ruler"></i> Measure a distance</button>
+            <button id="clearMeasure" class="quiet">Clear</button>
+          </div>
+        </div>
+        <div class="group">
+          <h3>Show</h3>
+          <label class="check"><input type="checkbox" id="showAddress" checked /> Address</label>
+          <label class="check"><input type="checkbox" id="labels" checked /> Room names and sizes</label>
+          <label class="check"><input type="checkbox" id="curtains" checked /> Curtains</label>
+          <label class="check"><input type="checkbox" id="overlay" /> The original floor-plan drawing</label>
+          <div class="row indent"><span class="muted">Drawing opacity</span><input type="range" id="overlayOpacity" min="0.1" max="1" step="0.05" value="0.7" /></div>
+          <div class="row"><span class="muted">Wall height in Overview</span><input type="range" id="cut" min="1.0" max="3.1" step="0.05" value="2.45" /><span id="cutLabel" class="num">2.45 m</span></div>
+        </div>
+        <div class="group">
+          <h3>Layout file</h3>
+          <div class="row">
+            <button id="export"><i data-ico="download-simple"></i> Export</button>
+            <button id="import"><i data-ico="upload-simple"></i> Import</button>
+            <input type="file" id="importFile" accept="application/json" hidden />
+          </div>
+        </div>
+        <div class="group">
+          <h3>Floor plan</h3>
+          <a class="text-link" id="editPlanLink" href="/editor.html"><i data-ico="blueprint"></i> Edit walls, doors and rooms</a>
+        </div>
+        <details>
+          <summary>Rendering</summary>
+          <label class="check"><input type="checkbox" id="ao" checked /> Soft shadows</label>
+          <label class="check"><input type="checkbox" id="photoreal" /> Path tracing (experimental) <span class="muted num" id="ptStatus"></span></label>
+        </details>
+      </section>
+    </aside>
+
+    <div id="hint"></div>
+    <canvas id="fade"></canvas>
+    <div id="itemBar" class="hidden"><span id="ibName"></span><button id="ibSpin" title="Drag left or right to turn freely (snaps to 5°, hold Alt for no snapping)"><i data-ico="arrows-clockwise"></i><span id="ibDeg" class="num">0°</span></button><button id="ibRotL" title="Turn left 90°"><i data-ico="arrow-counter-clockwise"></i></button><button id="ibRotR" title="Turn right 90°"><i data-ico="arrow-clockwise"></i></button><button id="ibDup" title="Copy"><i data-ico="copy"></i></button><button id="ibDel" title="Delete"><i data-ico="trash"></i></button><span id="ibWarn" class="hidden">Overlaps something</span></div>
+    <div id="charPicker" class="hidden">
+      <div class="modal">
+        <h2>Who's walking around?</h2>
+        <p class="muted">They're shown at your height. You can switch any time under Go to.</p>
+        <div class="seg3">
+          <button data-char="woman">Woman</button><button data-char="man">Man</button><button data-char="mannequin">Mannequin</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/boot.js"></script>
+  </body>
+</html>

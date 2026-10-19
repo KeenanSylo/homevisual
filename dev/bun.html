@@ -1,0 +1,22 @@
+<!doctype html><script type="module">
+import * as THREE from 'three'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
+new FBXLoader().load('/models/avatar/Female_Adult_17/Female_Adult_17.fbx', (g) => {
+  let m; g.traverse((o) => { if (o.isSkinnedMesh) m = o })
+  const sk = m.skeleton, hb = sk.bones.findIndex((b) => /Head$/.test(b.name.replace(/[_ ]/g, '')))
+  const toHead = sk.boneInverses[hb].clone().multiply(m.bindMatrix)
+  const gg = m.geometry, pos = gg.attributes.position, uv = gg.attributes.uv, ix = gg.index
+  const mats = m.material.map((x) => x.name)
+  const out = { mats, groups: gg.groups.map((x) => [x.materialIndex, x.count]), indexed: !!ix }
+  const v = new THREE.Vector3(), pts = []
+  for (const gr of gg.groups) {
+    if (!/head/i.test(mats[gr.materialIndex])) continue
+    for (let k = gr.start; k < gr.start + gr.count; k++) { const i = ix ? ix.getX(k) : k; v.fromBufferAttribute(pos, i).applyMatrix4(toHead); pts.push([v.x, v.y, v.z, uv.getX(i), uv.getY(i)]) }
+  }
+  const ax = [0, 1, 2].map((a) => [Math.min(...pts.map((p) => p[a])), Math.max(...pts.map((p) => p[a]))])
+  out.bounds = ax
+  // extreme points along each axis + their uv
+  out.ext = [0, 1, 2].flatMap((a) => [pts.reduce((b, p) => (p[a] < b[a] ? p : b)), pts.reduce((b, p) => (p[a] > b[a] ? p : b))]).map((p) => p.map((x) => +x.toFixed(3)))
+  window.__r = out
+})
+</script>
