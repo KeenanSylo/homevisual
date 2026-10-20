@@ -346,7 +346,7 @@ scene.add(cursor)
 let apt = null
 let doors = []
 const state = {
-  me: true, steps: true, view: localStorage.getItem('apt-viewmode') || 'third',
+  me: true, steps: true, view: localStorage.getItem('apt-viewmode') || 'first',
   mode: 'dollhouse', date: new Date(), hour: 15, lights: 'auto', cut: 2.45,
   labels: true, ao: true, photoreal: false, baked: localStorage.getItem('apt-baked') !== '0', curtains: P.SPEC.curtains !== false, tool: 'select', playing: false, lampsOn: false,
 }
@@ -1534,7 +1534,7 @@ function setView(v) {
   state.view = v; localStorage.setItem('apt-viewmode', v)
   document.querySelectorAll('#viewModes button').forEach((b) => b.classList.toggle('on', b.dataset.view === v))
   syncAvatarVisibility(); avatar.setOpacity(1); camDist = 1.7
-  if (state.mode === 'walk') { look.pitch = v === 'third' ? -0.18 : -0.05; if (v === 'third') look.yaw = roomiestYaw(look.yaw); placeWalkCamera() }
+  if (state.mode === 'walk') { look.pitch = v === 'third' ? -0.18 : -0.05; if (v === 'third') look.yaw = roomiestYaw(look.yaw); placeWalkCamera(); maybeAskCharacter() }
   invalidate(true)
 }
 function chooseChar(kind) {
@@ -1551,7 +1551,8 @@ setView(state.view)
   if (c) chooseChar(c)
   else avatar.setCharacter('mannequin').then(() => { syncAvatarVisibility(); invalidate(true) })
 }
-function maybeAskCharacter() { if (!localStorage.getItem('apt-char')) $('charPicker').classList.remove('hidden') }
+// only ask who's walking once you can actually see them
+function maybeAskCharacter() { if (state.view === 'third' && !localStorage.getItem('apt-char')) $('charPicker').classList.remove('hidden') }
 
 // ---- smooth mode switches: freeze the last frame, switch, compile, then cross-fade
 const fadeEl = $('fade')
