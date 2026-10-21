@@ -71,7 +71,7 @@ details[open] summary { margin-bottom: 6px; }
 /* ---------------------------------------------------------------- title block (top left) */
 .title-block {
   position: fixed; top: 16px; left: 16px; z-index: 6; width: 360px;
-  display: grid; grid-template-columns: auto 1fr auto; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: 3px;
+  display: grid; grid-template-columns: auto 1fr; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: 3px;
 }
 .tb-home {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px 12px;
@@ -81,9 +81,6 @@ details[open] summary { margin-bottom: 6px; }
 .tb-name { padding: 9px 12px 8px; min-width: 0; }
 .tb-name h1 { font-size: 17px; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tb-name p { margin: 1px 0 0; color: var(--graphite); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tb-privacy { align-self: stretch; border: none; border-left: 1px solid var(--rule); border-radius: 0; background: transparent; padding: 0 12px; color: var(--graphite); }
-.tb-privacy:hover { background: var(--ink-08); color: var(--ink); }
-.tb-privacy[aria-pressed='true'] { background: var(--ink); color: var(--sheet); border-left-color: var(--ink); }
 .tb-cells { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; border-top: 1px solid var(--ink); }
 .tb-cells div { padding: 6px 12px 7px; border-left: 1px solid var(--rule); }
 .tb-cells div:first-child { border-left: none; }
@@ -298,7 +295,7 @@ body.viewer { overscroll-behavior: none; }
   #dock #shot { display: none; }
   .drawer { top: auto; left: 0; bottom: 0; height: 68dvh; width: auto; border-left: none; border-top: 1.5px solid var(--ink); border-radius: 14px 14px 0 0; transform: translateY(100%); padding-bottom: env(safe-area-inset-bottom); }
   body.drawer-open #dock, body.drawer-open #hint { display: none; }
-  .drawer button, .drawer select, .icon-btn, .tb-privacy, .tb-home { min-height: 44px; }
+  .drawer button, .drawer select, .icon-btn, .tb-home { min-height: 44px; }
   .drawer input[type='text'], .drawer input[type='number'], .drawer input[type='date'], .drawer select { font-size: 16px; }
   .walk-welcome { bottom: calc(106px + env(safe-area-inset-bottom)); left: 50%; width: calc(100% - 24px); max-width: 420px; gap: 12px; padding: 16px; flex-direction: column; align-items: stretch; }
   .walk-welcome h2 { font-size: 20px; }
