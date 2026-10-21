@@ -41,7 +41,8 @@ const mobileGPU = isTouch || /Android|iPhone|iPad/i.test(navigator.userAgent)
 const isNarrow = () => innerWidth <= 760 || (isTouch && innerHeight <= 600)
 let mobileUI
 const mobileMove = { x: 0, y: 0 }
-const DPR_KEY = mobileGPU ? 'apt-dpr-mobile' : 'apt-dpr2'
+// Reset the old mobile profile, which could persist a visibly pixelated 0.75 DPR.
+const DPR_KEY = mobileGPU ? 'apt-dpr-mobile-v2' : 'apt-dpr2'
 const SHADOW_SIZE = mobileGPU ? 2048 : 4096
 const DRAWER_W = 380
 let PANEL = 0 // width of the open drawer on the right (0 when closed / on phones)
@@ -61,11 +62,10 @@ const HOME_CAM = [CX + (FACING[0] * 7.9 + FACING[1] * 5.9) * SCALE, 10.4 * SCALE
 // ------------------------------------------------------------------ renderer
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' })
 // One stable render resolution (changing it reallocates every buffer = a visible flash).
-// Starts at a sensible level and only steps down — rarely, and remembered — if the GPU can't keep up.
-const DPR_MAX = Math.min(devicePixelRatio, mobileGPU ? 1.25 : 2)
-// new key: older versions could remember a very low value (0.75 = blocky picture)
-const DPR_MIN = Math.min(devicePixelRatio, mobileGPU ? 0.75 : 1.25)
-let dprMove = Math.max(DPR_MIN, Math.min(DPR_MAX, parseFloat(localStorage.getItem(DPR_KEY)) || Math.min(devicePixelRatio, mobileGPU ? 1 : 1.5)))
+// Keep at least 1.5 render pixels per CSS pixel on retina phones, even after adaptive downscaling.
+const DPR_MAX = Math.min(devicePixelRatio, 2)
+const DPR_MIN = Math.min(devicePixelRatio, mobileGPU ? 1.5 : 1.25)
+let dprMove = Math.max(DPR_MIN, Math.min(DPR_MAX, parseFloat(localStorage.getItem(DPR_KEY)) || Math.min(devicePixelRatio, mobileGPU ? 2 : 1.5)))
 renderer.setPixelRatio(dprMove)
 renderer.setSize(innerWidth, innerHeight)
 renderer.shadowMap.enabled = true
@@ -137,8 +137,8 @@ const PaniniShader = {
 }
 const proj = { panini: true, X: 1, Y: 1, tanH: 1, tanV: 1 }
 function makeComposer(cam) {
-  const rt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 0 })
-  const c = new EffectComposer(renderer, rt)
+  // Let the composer apply DPR once. A pre-scaled target made its passes use DPR twice.
+  const c = new EffectComposer(renderer)
   const ao = new N8AOPass(scene, cam, innerWidth, innerHeight)
   Object.assign(ao.configuration, { aoRadius: 0.5, distanceFalloff: 0.5, intensity: 4.5, aoSamples: mobileGPU ? 6 : 12, denoiseSamples: mobileGPU ? 4 : 6, denoiseRadius: 10, aoTones: 0, gammaCorrection: false, transparencyAware: true, halfRes: true, depthAwareUpsampling: true })
   const plain = new RenderPass(scene, cam); plain.enabled = false
@@ -839,10 +839,16 @@ const DEG = Math.PI / 180
 function applyWalkFov() {
   const screenAspect = innerWidth / innerHeight
   persp.zoom = state.mode === 'walk' ? 1 : Math.min(1, screenAspect / 1.1)
-  const usePanini = state.mode === 'walk' && proj.panini && !usePT()
+  // A landscape-wide projection stretches too few source pixels across a tall phone screen.
+  // In portrait, use a direct perspective render and a comfortable vertical field of view.
+  const portraitPhone = isTouch && screenAspect < 1
+  const usePanini = state.mode === 'walk' && proj.panini && !usePT() && !portraitPhone
   for (const cp of [compP, compO]) cp.panini.enabled = usePanini
   if (state.mode !== 'walk') { persp.aspect = screenAspect; persp.updateProjectionMatrix(); return }
-  const hf = usePanini ? HFOV : Math.min(HFOV, 100)
+  const requestedHF = usePanini ? HFOV : Math.min(HFOV, 100)
+  const hf = portraitPhone
+    ? 2 * Math.atan(Math.tan(Math.min(HFOV, 95) * DEG / 2) * screenAspect) / DEG
+    : requestedHF
   if (usePanini) {
     const pm = (hf / 2) * DEG, cm = Math.cos(pm)
     proj.X = 2 * Math.tan(pm / 2); proj.Y = proj.X / screenAspect
@@ -858,7 +864,7 @@ function applyWalkFov() {
 }
 // screen NDC → the rectilinear NDC of the wide render camera (for picking through the panini view)
 function paniniToRect(v) {
-  if (!(state.mode === 'walk' && proj.panini && !usePT())) return v
+  if (!compP.panini.enabled) return v
   const x = v.x * proj.X, y = v.y * proj.Y
   const phi = 2 * Math.atan(x / 2), c = Math.cos(phi), h = (y * (1 + c)) / 2
   v.set(Math.tan(phi) / proj.tanH, h / c / proj.tanV)
