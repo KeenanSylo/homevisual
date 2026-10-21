@@ -267,3 +267,75 @@ body.drawer-open .drawer { transform: none; visibility: visible; }
 .rebake-note { font-size: 12px; line-height: 1.4; margin: 6px 0 2px; }
 .bake-status { font-size: 12.5px; line-height: 1.45; margin: 8px 0 10px; }
 #bakeChip[hidden], #bakeToggle[hidden], #rebake[hidden], .rebake-note[hidden] { display: none; }
+
+/* The apartment stays the main canvas; one clear invitation starts the tour. */
+.walk-welcome {
+  position: fixed; z-index: 6; left: calc((100% - var(--dw)) / 2); bottom: 112px;
+  transform: translateX(-50%); display: flex; align-items: center; gap: 28px;
+  padding: 18px 20px; background: var(--sheet); border: 1.5px solid var(--ink);
+  border-radius: 12px; box-shadow: 0 8px 26px rgba(31,36,33,.12); max-width: calc(100% - 32px);
+}
+.walk-welcome h2 { margin: 0 0 3px; font-size: 19px; letter-spacing: -.025em; line-height: 1.2; }
+.walk-welcome p { margin: 0; font-size: 13px; color: var(--graphite); }
+#startWalking { min-height: 48px; padding: 0 20px; white-space: nowrap; }
+#startWalking:hover { background: var(--marker); color: var(--ink); }
+[hidden], .walk-welcome[hidden], .rotate-tip[hidden], .fullscreen-walk[hidden] { display: none !important; }
+body.drawer-open .walk-welcome { display: none; }
+.rotate-tip, .touch-controls, .fullscreen-walk { display: none; }
+body.viewer { overscroll-behavior: none; }
+
+@media (max-width: 760px), (any-pointer: coarse) and (max-height: 600px) {
+  body.drawer-open { --dw: 0px; }
+  .title-block { top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left)); right: 64px; width: auto; }
+  .tb-cells, .tb-home span { display: none; }
+  .tb-name h1 { font-size: 15px; }
+  #topRight { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); gap: 6px; }
+  .sun-chip { width: 44px; padding: 0; }
+  .sun-chip #sunChipTime, .sun-chip #sunChipNote, .bake-chip, #compass { display: none !important; }
+  #dock { left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); transform: none; justify-content: space-between; overflow-x: auto; scrollbar-width: none; }
+  #dock button { min-width: 42px; min-height: 44px; padding: 0 6px; font-size: 11px; flex-direction: column; gap: 2px; flex: 1; }
+  .dock-modes, .dock-tools { flex: 1; }
+  #dock #shot { display: none; }
+  .drawer { top: auto; left: 0; bottom: 0; height: 68dvh; width: auto; border-left: none; border-top: 1.5px solid var(--ink); border-radius: 14px 14px 0 0; transform: translateY(100%); padding-bottom: env(safe-area-inset-bottom); }
+  body.drawer-open #dock, body.drawer-open #hint { display: none; }
+  .drawer button, .drawer select, .icon-btn, .tb-privacy, .tb-home { min-height: 44px; }
+  .drawer input[type='text'], .drawer input[type='number'], .drawer input[type='date'], .drawer select { font-size: 16px; }
+  .walk-welcome { bottom: calc(106px + env(safe-area-inset-bottom)); left: 50%; width: calc(100% - 24px); max-width: 420px; gap: 12px; padding: 16px; flex-direction: column; align-items: stretch; }
+  .walk-welcome h2 { font-size: 20px; }
+  #hint { bottom: calc(76px + env(safe-area-inset-bottom)); left: 50%; width: calc(100% - 24px); justify-content: center; white-space: normal; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; }
+  .walking #hint { display: none; }
+}
+
+@media (any-pointer: coarse) {
+  .touch-viewer.walking .touch-controls { display: flex; position: fixed; z-index: 6; left: max(22px, env(safe-area-inset-left)); right: max(22px, env(safe-area-inset-right)); bottom: calc(92px + env(safe-area-inset-bottom)); justify-content: space-between; pointer-events: none; }
+  .touch-control { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--ink); font-size: 12px; font-weight: 650; }
+  .touch-control > span { background: var(--sheet); padding: 2px 8px; border-radius: 5px; }
+  .thumb-pad { width: 112px; height: 112px; border-radius: 50%; border: 1.5px solid rgba(31,36,33,.6); background: rgba(251,251,249,.72); display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none; pointer-events: auto; }
+  .thumb-pad.active { border-color: var(--ink); background: rgba(244,196,48,.7); }
+  .thumb-stick { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); pointer-events: none; }
+  .look-mark { font-size: 30px; font-weight: 400; pointer-events: none; }
+  .touch-viewer.walking .fullscreen-walk { display: inline-flex; position: fixed; z-index: 6; top: calc(76px + env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); min-height: 44px; font-size: 12px; }
+  body.drawer-open .touch-controls, body.drawer-open .fullscreen-walk { display: none !important; }
+}
+@media (any-pointer: coarse) and (orientation: portrait) {
+  .touch-viewer .rotate-tip { display: flex; position: fixed; top: calc(84px + env(safe-area-inset-top)); left: 12px; right: 12px; z-index: 6; padding: 12px 14px; gap: 10px; align-items: center; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+  .rotate-tip strong { font-size: 13px; }
+  .rotate-tip p { font-size: 12px; margin: 2px 0 0; color: var(--graphite); }
+  .rotate-tip button { font-size: 12px; min-height: 44px; flex: 0 0 100px; }
+  .touch-viewer.walking .fullscreen-walk { top: auto; bottom: calc(252px + env(safe-area-inset-bottom)); }
+  body.drawer-open .rotate-tip { display: none; }
+}
+@media (any-pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  .title-block { right: auto; max-width: 56%; }
+  .tb-name p { display: none; }
+  .tb-home { padding: 6px 10px; }
+  #dock { left: 50%; right: auto; width: max-content; max-width: calc(100% - 260px); transform: translateX(-50%); bottom: max(8px, env(safe-area-inset-bottom)); }
+  #dock button { min-width: 40px; }
+  .walking #dock .dock-tools button[data-tab='furnish'], .walking #dock .dock-tools button[data-tab='light'] { display: none; }
+  .walk-welcome { bottom: 94px; width: auto; max-width: calc(100% - 48px); flex-direction: row; gap: 20px; padding: 12px 16px; }
+  .walk-welcome h2 { font-size: 18px; }
+  .touch-viewer.walking .touch-controls { bottom: max(10px, env(safe-area-inset-bottom)); }
+  .thumb-pad { width: 96px; height: 96px; }
+  .drawer { left: auto; top: 0; width: min(380px, 80vw); height: 100dvh; border-radius: 0; border-left: 1.5px solid var(--ink); }
+  .touch-viewer.walking .fullscreen-walk { top: max(10px, env(safe-area-inset-top)); right: calc(64px + env(safe-area-inset-right)); }
+}

@@ -1,3 +1,4 @@
+import { initMobileViewer } from './mobile.js'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
@@ -35,7 +36,13 @@ THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree
 THREE.Mesh.prototype.raycast = acceleratedRaycast
 const $ = (id) => document.getElementById(id)
 const host = $('viewport')
-const isNarrow = () => innerWidth < 760
+const isTouch = matchMedia('(any-pointer: coarse)').matches
+const mobileGPU = isTouch || /Android|iPhone|iPad/i.test(navigator.userAgent)
+const isNarrow = () => innerWidth <= 760 || (isTouch && innerHeight <= 600)
+let mobileUI
+const mobileMove = { x: 0, y: 0 }
+const DPR_KEY = mobileGPU ? 'apt-dpr-mobile' : 'apt-dpr2'
+const SHADOW_SIZE = mobileGPU ? 2048 : 4096
 const DRAWER_W = 380
 let PANEL = 0 // width of the open drawer on the right (0 when closed / on phones)
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
@@ -55,10 +62,10 @@ const HOME_CAM = [CX + (FACING[0] * 7.9 + FACING[1] * 5.9) * SCALE, 10.4 * SCALE
 const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' })
 // One stable render resolution (changing it reallocates every buffer = a visible flash).
 // Starts at a sensible level and only steps down — rarely, and remembered — if the GPU can't keep up.
-const DPR_MAX = Math.min(devicePixelRatio, 2)
+const DPR_MAX = Math.min(devicePixelRatio, mobileGPU ? 1.25 : 2)
 // new key: older versions could remember a very low value (0.75 = blocky picture)
-const DPR_MIN = Math.min(devicePixelRatio, 1.25)
-let dprMove = Math.max(DPR_MIN, Math.min(DPR_MAX, parseFloat(localStorage.getItem('apt-dpr2')) || Math.min(devicePixelRatio, 1.5)))
+const DPR_MIN = Math.min(devicePixelRatio, mobileGPU ? 0.75 : 1.25)
+let dprMove = Math.max(DPR_MIN, Math.min(DPR_MAX, parseFloat(localStorage.getItem(DPR_KEY)) || Math.min(devicePixelRatio, mobileGPU ? 1 : 1.5)))
 renderer.setPixelRatio(dprMove)
 renderer.setSize(innerWidth, innerHeight)
 renderer.shadowMap.enabled = true
@@ -133,7 +140,7 @@ function makeComposer(cam) {
   const rt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 0 })
   const c = new EffectComposer(renderer, rt)
   const ao = new N8AOPass(scene, cam, innerWidth, innerHeight)
-  Object.assign(ao.configuration, { aoRadius: 0.5, distanceFalloff: 0.5, intensity: 4.5, aoSamples: 12, denoiseSamples: 6, denoiseRadius: 10, aoTones: 0, gammaCorrection: false, transparencyAware: true, halfRes: true, depthAwareUpsampling: true })
+  Object.assign(ao.configuration, { aoRadius: 0.5, distanceFalloff: 0.5, intensity: 4.5, aoSamples: mobileGPU ? 6 : 12, denoiseSamples: mobileGPU ? 4 : 6, denoiseRadius: 10, aoTones: 0, gammaCorrection: false, transparencyAware: true, halfRes: true, depthAwareUpsampling: true })
   const plain = new RenderPass(scene, cam); plain.enabled = false
   c.addPass(plain)
   c.addPass(ao)
@@ -180,7 +187,7 @@ THREE.DefaultLoadingManager.onLoad = () => { assetsLoaded = true; markDirty(); s
 // ------------------------------------------------------------------ lights
 const sun = new THREE.DirectionalLight(0xffffff, 3)
 sun.castShadow = true
-sun.shadow.mapSize.set(4096, 4096)
+sun.shadow.mapSize.set(SHADOW_SIZE, SHADOW_SIZE)
 const SH = Math.max(6, Math.hypot(BB.w, BB.d) / 2 + 1)
 Object.assign(sun.shadow.camera, { left: -SH, right: SH, top: SH, bottom: -SH, near: 20, far: 75 }) // tight on the apartment → ~3 mm texels
 sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.015; sun.shadow.radius = 2
@@ -607,7 +614,7 @@ function updateSun() {
     const k = L.userData.kind, a = (mood[k] ?? state.accent) * (k === 'string' || k === 'candle' ? 0.6 + 0.4 * night : 1)
     L.userData.on = a; L.intensity = L.userData.base * a
   }
-  for (const cp of [compP, compO]) { cp.bloom.strength = 0.32 * (1 - day) * (state.lampsOn || state.accent > 0 ? 1 : 0.4); cp.bloom.threshold = 4; cp.bloom.radius = 0.35; /* only real light sources (HDR > 4) glow, never lit walls */ cp.bloom.enabled = cp.bloom.strength > 0.05 /* off in daylight → no cost */ }
+  for (const cp of [compP, compO]) { cp.bloom.strength = 0.32 * (1 - day) * (state.lampsOn || state.accent > 0 ? 1 : 0.4); cp.bloom.threshold = 4; cp.bloom.radius = 0.35; /* only real light sources (HDR > 4) glow, never lit walls */ cp.bloom.enabled = !mobileGPU && cp.bloom.strength > 0.05 /* off in daylight → no cost */ }
   for (const m of glowMats) { const k = m.userData.glow === 'flame' ? 'candle' : m.userData.glow === 'screen' ? 'screen' : m.userData.glow === 'rgb' ? 'rgb' : 'string'; m.emissiveIntensity = (mood[k] ?? state.accent) * (k === 'screen' ? 1.4 : 10) }
   // windowless bathroom: its ceiling light is always on when you're inside
   bathLight.intensity = state.lights === 'off' ? 0 : walk ? 17 : state.lampsOn ? 9 : 0
@@ -685,9 +692,8 @@ const hints = {
   measure: [['Click two points', 'to measure'], ['Shift', 'keeps it straight'], ['Esc', 'to stop']],
   place: [['Click the floor', 'to put it down'], ['Scroll', 'to turn it'], ['Esc', 'to cancel']],
 }
-const isTouch = matchMedia('(pointer: coarse)').matches
 if (isTouch) Object.assign(hints, {
-  walk: [['Drag', 'to look'], ['Tap the floor', 'to walk there'], ['Pinch', 'to widen the view']],
+  walk: [['Left thumb', 'to move'], ['Right thumb', 'to look'], ['Tap a door', 'to open it']],
   dollhouse: [['Drag', 'to spin'], ['Two fingers', 'to pan and zoom']],
   plan: [['Drag', 'to pan'], ['Pinch', 'to zoom']],
 })
@@ -711,7 +717,7 @@ function applyViewOffset() {
 }
 
 function fitOrtho() {
-  const aspect = innerWidth / innerHeight, hh = 5.4 * SCALE
+  const aspect = innerWidth / innerHeight, hh = 5.4 * SCALE * Math.max(1, 0.9 / aspect)
   ortho.left = -hh * aspect; ortho.right = hh * aspect; ortho.top = hh; ortho.bottom = -hh
   ortho.updateProjectionMatrix()
 }
@@ -741,6 +747,8 @@ function setMode(mode) {
   applyWalkFov()
   $('cut').disabled = mode !== 'dollhouse'
   document.body.classList.toggle('walking', mode === 'walk')
+  $('walkWelcome').hidden = mode === 'walk'
+  mobileUI?.reset()
   syncAvatarVisibility()
   cursor.visible = false
   renderer.domElement.style.cursor = mode === 'walk' ? 'grab' : ''
@@ -830,6 +838,7 @@ let EYE = 1.61, HFOV = 120
 const DEG = Math.PI / 180
 function applyWalkFov() {
   const screenAspect = innerWidth / innerHeight
+  persp.zoom = state.mode === 'walk' ? 1 : Math.min(1, screenAspect / 1.1)
   const usePanini = state.mode === 'walk' && proj.panini && !usePT()
   for (const cp of [compP, compO]) cp.panini.enabled = usePanini
   if (state.mode !== 'walk') { persp.aspect = screenAspect; persp.updateProjectionMatrix(); return }
@@ -926,7 +935,7 @@ let camDist = 1.6
 const BODY_R = 0.27
 function moving2() { return vel.lengthSq() > 0.04 || avatar.path.length > 0 }
 function walk(dt) {
-  let mx = 0, mz = 0, turn = 0
+  let mx = mobileMove.x, mz = -mobileMove.y, turn = 0
   if (keys.has('KeyW') || keys.has('ArrowUp')) mz += 1
   if (keys.has('KeyS') || keys.has('ArrowDown')) mz -= 1
   if (keys.has('KeyA')) mx -= 1
@@ -940,7 +949,7 @@ function walk(dt) {
   right.set(-fwd.z, 0, fwd.x)
   want.set(0, 0, 0)
   const bx = player.x, bz = player.z
-  if (mx || mz) { walkTarget = null; avatar.path = []; want.addScaledVector(fwd, mz).addScaledVector(right, mx).normalize().multiplyScalar(speed) }
+  if (mx || mz) { walkTarget = null; avatar.path = []; want.addScaledVector(fwd, mz).addScaledVector(right, mx).clampLength(0, 1).multiplyScalar(speed) }
   if (avatar.path.length) {
     // following a clicked path (character walks, the camera follows)
     player.x = avatar.position.x; player.z = avatar.position.z
@@ -1307,6 +1316,8 @@ function setRot(it, r) { it.rot = norm(r); planner.place(it); updateEditorPos();
 // ---- furniture thumbnails: render each catalogue item (in the current style) to a small image
 let thumbR = null, thumbEnv = null
 function renderThumbs() {
+  // Keep a second WebGL context and catalogue renders out of the mobile startup path.
+  if (mobileGPU && drawerTab !== 'furnish') return
   if (!thumbR) {
     thumbR = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true })
     thumbR.setSize(160, 160); thumbR.toneMapping = THREE.AgXToneMapping; thumbR.toneMappingExposure = 1.15
@@ -1612,6 +1623,7 @@ function showTab(t, toggle = false) {
   document.querySelectorAll('section.tab').forEach((sct) => sct.classList.toggle('hidden', sct.dataset.tab !== t))
   setDrawer(true)
   $('panel').scrollTop = 0
+  if (mobileGPU && t === 'furnish') setTimeout(renderThumbs, 0)
 }
 $('panelMin').onclick = () => setDrawer(false)
 document.querySelectorAll('#tabs button[data-tab]').forEach((b) => (b.onclick = () => showTab(b.dataset.tab, true)))
@@ -1688,15 +1700,15 @@ async function takePhoto() {
   const hide = [labelGroup, cursor, planner.selBox, planner.clear, measureGroup]; const vis = hide.map((o) => o.visible); hide.forEach((o) => (o.visible = false))
   const bar = $('itemBar'); bar.classList.add('hidden')
   const maxTex = renderer.capabilities.maxTextureSize
-  const dpr = Math.min(3, maxTex / innerWidth, maxTex / innerHeight)
+  const dpr = Math.min(mobileGPU ? 1.5 : 3, maxTex / innerWidth, maxTex / innerHeight)
   setDPR(dpr)
   Object.assign(cp.ao.configuration, { halfRes: false, aoSamples: 32, denoiseSamples: 16, denoiseRadius: 6 })
-  sun.shadow.mapSize.set(8192, 8192); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true
+  sun.shadow.mapSize.set(mobileGPU ? 2048 : 8192, mobileGPU ? 2048 : 8192); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true
   cp.c.render(); cp.c.render() // 2nd pass after shadow + AO settle
   const url = renderer.domElement.toDataURL('image/png')
   // restore
   Object.assign(cp.ao.configuration, cfg)
-  sun.shadow.mapSize.set(4096, 4096); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true
+  sun.shadow.mapSize.set(SHADOW_SIZE, SHADOW_SIZE); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true
   setDPR(prevDPR); hide.forEach((o, i) => (o.visible = vis[i])); invalidate(true)
   const a = document.createElement('a'); a.href = url; a.download = `apartment-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.png`; a.click()
   btn.innerHTML = old; btn.disabled = false
@@ -1764,6 +1776,7 @@ function render() {
 const timer = new THREE.Timer()
 function frame() {
   timer.update()
+  if (document.hidden) return
   const dt = Math.min(timer.getDelta(), 0.05)
   if (state.playing) { state.hour += dt * 0.6; if (state.hour > 23) state.hour = 4; setTimeUI(); updateSun() }
   let doorsMoving = false
@@ -1804,14 +1817,26 @@ function frame() {
     perfAcc += dt * 1000; perfN++
     if (perfN >= 90) {
       const avg = perfAcc / perfN; perfAcc = 0; perfN = 0
-      if (avg > 28 && dprMove > DPR_MIN) { dprMove = Math.max(DPR_MIN, dprMove - 0.25); localStorage.setItem('apt-dpr2', dprMove); pendingDPR = dprMove }
-      else if (avg < 13 && dprMove < DPR_MAX) { dprMove = Math.min(DPR_MAX, dprMove + 0.25); localStorage.setItem('apt-dpr2', dprMove); pendingDPR = dprMove } // fast GPU → sharper
+      if (avg > 28 && dprMove > DPR_MIN) { dprMove = Math.max(DPR_MIN, dprMove - 0.25); localStorage.setItem(DPR_KEY, dprMove); pendingDPR = dprMove }
+      else if (avg < 13 && dprMove < DPR_MAX) { dprMove = Math.min(DPR_MAX, dprMove + 0.25); localStorage.setItem(DPR_KEY, dprMove); pendingDPR = dprMove } // fast GPU → sharper
     }
   } else if (!moving && pendingDPR) { setDPR(pendingDPR); pendingDPR = 0 } // apply while still, never mid-motion
   void t0
 }
 const camPrev = new THREE.Matrix4(), projPrev = new THREE.Matrix4()
 let perfAcc = 0, perfN = 0, pendingDPR = 0, modeChangedAt = 0
+
+mobileUI = initMobileViewer({
+  isTouch, movement: mobileMove,
+  start: () => { setDrawer(false); transition(() => setMode('walk')) },
+  look: (dx, dy) => {
+    look.yaw += dx * 0.0042
+    look.pitch = Math.max(third() ? -1.1 : -1.35, Math.min(third() ? 0.55 : 1.35, look.pitch + dy * 0.0042))
+    applyLook(); invalidate()
+  },
+  stop: () => { keys.clear(); lookDrag = null; walkTarget = null; avatar.path = []; vel.set(0, 0, 0) },
+  wake: () => { unlockAudio(); invalidate() },
+})
 
 // URL params (?mode=walk&spot=kitchen&t=18.5&date=2026-12-21&pt=0) — handy for sharing a view
 {

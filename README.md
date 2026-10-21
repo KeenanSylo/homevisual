@@ -13,7 +13,12 @@ pnpm build      # static site in dist/
 - **Overview**: orbit around the model with the walls cut away.
 - **Plan**: a top-down drawing, optionally with the original floor plan laid on the floor.
 - **Walk**: first person. Drag to look, click the floor to walk there, WASD / arrows to move
-  (Shift runs), click a door to open it.
+  (Shift runs), click a door to open it. The **Start walking** panel opens this view directly.
+- **Phones and tablets**: rotate to landscape for more viewing space. Use the left thumb pad to move
+  and the right pad to look; dragging the scene and tapping the floor still work. Full screen tries
+  landscape locking where supported; portrait remains usable. Mobile rendering uses smaller shadows,
+  fewer AO samples, no bloom, and an adaptive 0.75–1.25 pixel ratio. Furniture thumbnails render when
+  Furnish is opened, and hidden tabs pause scene updates.
 
 ## Furniture
 - Add items from the catalogue, drag to move (snaps to 1 cm and to walls), **R** rotates, arrows nudge,

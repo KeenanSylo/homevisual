@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Homevisual</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -215,6 +215,19 @@
       </section>
     </aside>
 
+    <section id="walkWelcome" class="walk-welcome" aria-label="Explore the apartment">
+      <div><h2>Step inside your apartment</h2><p>Explore every room at eye level.</p></div>
+      <button id="startWalking" class="primary"><i data-ico="person-simple-walk"></i> Start walking</button>
+    </section>
+    <aside id="rotateTip" class="rotate-tip" aria-label="Phone orientation">
+      <div><strong>More room to look around</strong><p>Turn your phone sideways for the best view.</p></div>
+      <button id="dismissRotate">Continue in portrait</button>
+    </aside>
+    <button id="fullscreenWalk" class="fullscreen-walk" aria-label="Enter full screen">Full screen</button>
+    <div id="touchControls" class="touch-controls" aria-label="Walking controls">
+      <div class="touch-control"><div id="movePad" class="thumb-pad" role="group" aria-label="Drag to move"><span id="moveStick" class="thumb-stick"></span></div><span>Move</span></div>
+      <div class="touch-control"><div id="lookPad" class="thumb-pad look-pad" role="group" aria-label="Drag to look around"><span class="look-mark">+</span></div><span>Look around</span></div>
+    </div>
     <div id="hint"></div>
     <canvas id="fade"></canvas>
     <div id="itemBar" class="hidden"><span id="ibName"></span><button id="ibSpin" title="Drag left or right to turn freely (snaps to 5°, hold Alt for no snapping)"><i data-ico="arrows-clockwise"></i><span id="ibDeg" class="num">0°</span></button><button id="ibRotL" title="Turn left 90°"><i data-ico="arrow-counter-clockwise"></i></button><button id="ibRotR" title="Turn right 90°"><i data-ico="arrow-clockwise"></i></button><button id="ibDup" title="Copy"><i data-ico="copy"></i></button><button id="ibDel" title="Delete"><i data-ico="trash"></i></button><span id="ibWarn" class="hidden">Overlaps something</span></div>
