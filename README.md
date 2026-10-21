@@ -17,7 +17,7 @@ pnpm build      # static site in dist/
 - **Phones and tablets**: use portrait normally. A small translucent thumb pad moves you; drag the
   scene to look around or tap the floor to walk there. Start walking always opens Your eyes, even
   after using Behind you. Mobile rendering uses smaller shadows,
-  fewer AO samples, no bloom, and an adaptive 1.5–2 pixel ratio (limited by screen density).
+  bake-aware contact shading, no bloom, and an adaptive 1.5–2 pixel ratio (limited by screen density).
   Portrait walking renders directly with a vertical field of view capped at 95°, avoiding wide-view upscaling. Furniture thumbnails render when
   Furnish is opened, and hidden tabs pause scene updates.
 
@@ -32,7 +32,11 @@ pnpm build      # static site in dist/
 - **Baked light**: Blender Cycles bakes the room's bounce light for a few times of day
   (`public/apartments/<id>/bake/hNN/`). Furniture is lit by light probes, so it can move freely.
   Re-bake needs `pnpm dev` and Blender in `/Applications` (`sh dev/bake.sh <id> <layout> <hour>`).
+- **Contact shading**: baked room lighting already includes corner occlusion. Extra screen-space shading
+  runs only when no valid bake is applied, using a restrained full-resolution denoised fallback.
 - **Photoreal**: in-browser path tracing for still shots.
+
+Rendering decisions, research and checks: [docs/rendering.md](docs/rendering.md).
 
 ## Apartments
 Each apartment is `public/apartments/<id>/spec.json` plus its plan image, listed in

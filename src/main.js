@@ -1,4 +1,5 @@
 import { initMobileViewer } from './mobile.js'
+import { CONTACT_AO, needsContactAO, installStableShadowFilter } from './render-quality.js'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
@@ -30,6 +31,7 @@ import { Avatar, setWalkArea } from './avatar.js'
 import { footstep, unlockAudio } from './footsteps.js'
 import { makeSunAnalyser, fmtTime, fmtDur } from './sunreport.js'
 
+if (!installStableShadowFilter(THREE)) console.warn('Shadow filter needs updating for this Three.js version')
 RectAreaLightUniformsLib.init()
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree
@@ -140,7 +142,7 @@ function makeComposer(cam) {
   // Let the composer apply DPR once. A pre-scaled target made its passes use DPR twice.
   const c = new EffectComposer(renderer)
   const ao = new N8AOPass(scene, cam, innerWidth, innerHeight)
-  Object.assign(ao.configuration, { aoRadius: 0.5, distanceFalloff: 0.5, intensity: 4.5, aoSamples: mobileGPU ? 6 : 12, denoiseSamples: mobileGPU ? 4 : 6, denoiseRadius: 10, aoTones: 0, gammaCorrection: false, transparencyAware: true, halfRes: true, depthAwareUpsampling: true })
+  Object.assign(ao.configuration, CONTACT_AO)
   const plain = new RenderPass(scene, cam); plain.enabled = false
   c.addPass(plain)
   c.addPass(ao)
@@ -190,7 +192,9 @@ sun.castShadow = true
 sun.shadow.mapSize.set(SHADOW_SIZE, SHADOW_SIZE)
 const SH = Math.max(6, Math.hypot(BB.w, BB.d) / 2 + 1)
 Object.assign(sun.shadow.camera, { left: -SH, right: SH, top: SH, bottom: -SH, near: 20, far: 75 }) // tight on the apartment → ~3 mm texels
-sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.015; sun.shadow.radius = 2
+const shadowTexel = (2 * SH) / SHADOW_SIZE
+sun.shadow.bias = -0.5 * shadowTexel / (sun.shadow.camera.far - sun.shadow.camera.near)
+sun.shadow.normalBias = 0.5 * shadowTexel; sun.shadow.radius = 1.5
 sun.target.position.set(CX, 0, CZ + 0.6)
 scene.add(sun, sun.target)
 
@@ -422,10 +426,16 @@ function bakeFits() {
   const d = new Date(state.date.getFullYear(), j.month - 1, j.day)
   return Math.abs(d - new Date(state.date.getFullYear(), state.date.getMonth(), state.date.getDate())) / 864e5 <= 45
 }
+function syncRasterLighting() {
+  const on = needsContactAO({ enabled: state.ao, baked: !!bake?.room.length, pathTracing: usePT() })
+  for (const cp of [compP, compO]) { cp.ao.enabled = on; cp.plain.enabled = !on }
+}
 function syncBake() {
   clearTimeout(bakeTimer)
-  if (!bake || !apt || !planner) return
-  if (bakeFits()) applyBake(bake, apt.root, planner); else clearBake(bake)
+  if (bake && apt && planner) {
+    if (bakeFits()) applyBake(bake, apt.root, planner); else clearBake(bake)
+  }
+  syncRasterLighting()
   updateBakeStatus()
   invalidate(true)
 }
@@ -629,7 +639,8 @@ function updateSun() {
   applyEnvironment()
   if (usePT()) { pt.updateLights(); pt.updateMaterials() }
   if (bakeList.length) pickBake()
-  if (bake && bakeFits() !== bake.applied.length > 0) syncBake(); else updateBakeStatus()
+  if (bake && bakeFits() !== (bake.applied.length > 0)) syncBake(); else updateBakeStatus()
+  syncRasterLighting()
   invalidate(true)
   const facing = Math.abs(((az - P.FACADE_AZIMUTH + 540) % 360) - 180) < 90 && el > 0
   if (sunA) { if (lastSunDay !== state.date.toDateString()) { lastSunDay = state.date.toDateString(); sunReport() } }
@@ -1545,7 +1556,7 @@ $('play').onclick = () => { state.playing = !state.playing; $('play').innerHTML 
 $('labels').onchange = (e) => { state.labels = e.target.checked; updateLabels(); syncAvatarVisibility(); invalidate() }
 $('overlay').onchange = (e) => { planOverlay.visible = e.target.checked; invalidate() }
 $('overlayOpacity').oninput = (e) => { planOverlay.material.opacity = parseFloat(e.target.value); invalidate() }
-$('ao').onchange = (e) => { state.ao = e.target.checked; for (const cp of [compP, compO]) { cp.ao.enabled = state.ao; cp.plain.enabled = !state.ao } invalidate() }
+$('ao').onchange = (e) => { state.ao = e.target.checked; syncRasterLighting(); invalidate() }
 // ---- character + view mode
 function setView(v) {
   state.view = v; localStorage.setItem('apt-viewmode', v)
@@ -1709,7 +1720,7 @@ async function takePhoto() {
   const maxTex = renderer.capabilities.maxTextureSize
   const dpr = Math.min(mobileGPU ? 1.5 : 3, maxTex / innerWidth, maxTex / innerHeight)
   setDPR(dpr)
-  Object.assign(cp.ao.configuration, { halfRes: false, aoSamples: 32, denoiseSamples: 16, denoiseRadius: 6 })
+  Object.assign(cp.ao.configuration, { neuralDenoise: false, halfRes: false, aoSamples: 32, denoiseSamples: 16, denoiseRadius: 6 })
   sun.shadow.mapSize.set(mobileGPU ? 2048 : 8192, mobileGPU ? 2048 : 8192); sun.shadow.map?.dispose(); sun.shadow.map = null; renderer.shadowMap.needsUpdate = true
   cp.c.render(); cp.c.render() // 2nd pass after shadow + AO settle
   const url = renderer.domElement.toDataURL('image/png')
