@@ -693,7 +693,7 @@ const hints = {
   place: [['Click the floor', 'to put it down'], ['Scroll', 'to turn it'], ['Esc', 'to cancel']],
 }
 if (isTouch) Object.assign(hints, {
-  walk: [['Left thumb', 'to move'], ['Right thumb', 'to look'], ['Tap a door', 'to open it']],
+  walk: [['Thumb control', 'to move'], ['Drag the view', 'to look around'], ['Tap a door', 'to open it']],
   dollhouse: [['Drag', 'to spin'], ['Two fingers', 'to pan and zoom']],
   plan: [['Drag', 'to pan'], ['Pinch', 'to zoom']],
 })
@@ -1543,6 +1543,7 @@ $('ao').onchange = (e) => { state.ao = e.target.checked; for (const cp of [compP
 // ---- character + view mode
 function setView(v) {
   state.view = v; localStorage.setItem('apt-viewmode', v)
+  if (v === 'first') $('charPicker').classList.add('hidden')
   document.querySelectorAll('#viewModes button').forEach((b) => b.classList.toggle('on', b.dataset.view === v))
   syncAvatarVisibility(); avatar.setOpacity(1); camDist = 1.7
   if (state.mode === 'walk') { look.pitch = v === 'third' ? -0.18 : -0.05; if (v === 'third') look.yaw = roomiestYaw(look.yaw); placeWalkCamera(); maybeAskCharacter() }
@@ -1828,12 +1829,7 @@ let perfAcc = 0, perfN = 0, pendingDPR = 0, modeChangedAt = 0
 
 mobileUI = initMobileViewer({
   isTouch, movement: mobileMove,
-  start: () => { setDrawer(false); transition(() => setMode('walk')) },
-  look: (dx, dy) => {
-    look.yaw += dx * 0.0042
-    look.pitch = Math.max(third() ? -1.1 : -1.35, Math.min(third() ? 0.55 : 1.35, look.pitch + dy * 0.0042))
-    applyLook(); invalidate()
-  },
+  start: () => { setDrawer(false); transition(() => { setView('first'); setMode('walk') }) },
   stop: () => { keys.clear(); lookDrag = null; walkTarget = null; avatar.path = []; vel.set(0, 0, 0) },
   wake: () => { unlockAudio(); invalidate() },
 })

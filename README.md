@@ -14,9 +14,9 @@ pnpm build      # static site in dist/
 - **Plan**: a top-down drawing, optionally with the original floor plan laid on the floor.
 - **Walk**: first person. Drag to look, click the floor to walk there, WASD / arrows to move
   (Shift runs), click a door to open it. The **Start walking** panel opens this view directly.
-- **Phones and tablets**: rotate to landscape for more viewing space. Use the left thumb pad to move
-  and the right pad to look; dragging the scene and tapping the floor still work. Full screen tries
-  landscape locking where supported; portrait remains usable. Mobile rendering uses smaller shadows,
+- **Phones and tablets**: use portrait normally. A small translucent thumb pad moves you; drag the
+  scene to look around or tap the floor to walk there. Start walking always opens Your eyes, even
+  after using Behind you. Mobile rendering uses smaller shadows,
   fewer AO samples, no bloom, and an adaptive 0.75–1.25 pixel ratio. Furniture thumbnails render when
   Furnish is opened, and hidden tabs pause scene updates.
 
