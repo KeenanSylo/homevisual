@@ -2,9 +2,6 @@ body.home { background: var(--paper); min-height: 100%; }
 .bar { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-bottom: 1.5px solid var(--ink); background: var(--sheet); position: sticky; top: 0; z-index: 5; }
 .wordmark { font-weight: 800; font-size: 22px; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
 .bar-actions { display: flex; gap: 10px; align-items: center; }
-.btn-line { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; border-radius: 10px; border: 1.5px solid var(--ink); background: transparent; }
-.btn-line:hover { background: var(--ink-08); border-color: var(--ink); }
-.btn-line[aria-pressed='true'] { background: var(--ink); color: var(--sheet); }
 .btn-ink { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--sheet); font-weight: 650; padding: 10px 16px; border-radius: 10px; cursor: pointer; }
 .btn-ink:hover { background: #343b37; }
 body.home main { max-width: 1240px; margin: 0 auto; padding: 44px 32px 80px; }
@@ -48,7 +45,7 @@ body.home main { max-width: 1240px; margin: 0 auto; padding: 44px 32px 80px; }
 
 @media (max-width: 640px) {
   .bar { padding: 14px 16px; }
-  .btn-line span, .btn-ink .long { display: none; }
+  .btn-ink .long { display: none; }
   body.home main { padding: 28px 16px 60px; }
   .intro h1 { font-size: 30px; }
   .sheets { grid-template-columns: 1fr; gap: 20px; }

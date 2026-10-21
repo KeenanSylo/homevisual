@@ -1,7 +1,7 @@
 // Home: each apartment is a drawing sheet: its plan with the flat marked in highlighter yellow (like the key plan on
 // a listing), and a title block underneath. Dropping or picking a plan image starts a new one in the editor.
 import { hydrateIcons, icon } from './icons.js'
-import { builtinList, userList, userDelete, userPut, describe, isPrivate, setPrivate } from './store.js'
+import { builtinList, userList, userDelete, userPut, describe } from './store.js'
 
 hydrateIcons()
 const grid = document.getElementById('grid')
@@ -97,15 +97,5 @@ async function drawPlan(cv, spec, planBlob) {
   g.globalCompositeOperation = 'source-over'
 }
 
-// hide the address on every card, e.g. before taking a screenshot to share
-const pb = document.getElementById('privacyBtn')
-function syncPrivacy() {
-  const on = isPrivate()
-  pb.innerHTML = icon(on ? 'eye-slash' : 'eye')
-  pb.setAttribute('aria-pressed', String(on))
-  pb.title = pb.ariaLabel = on ? 'Show address' : 'Hide address'
-}
-pb.onclick = () => setPrivate(!isPrivate())
-addEventListener('hemma-private', () => { syncPrivacy(); render() })
-syncPrivacy()
+addEventListener('hemma-private', render)
 render()
